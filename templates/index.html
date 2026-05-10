@@ -1,0 +1,928 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Cacao Pay</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        cacao: "#5D3A24",
+                        orangePay: "#FF6600",
+                        cream: "#F8F3EE",
+                        softBrown: "#8A6245"
+                    },
+                    boxShadow: {
+                        luxury: "0 14px 40px rgba(93, 58, 36, 0.12)",
+                        panel: "0 20px 60px rgba(20, 20, 43, 0.18)"
+                    },
+                    animation: {
+                        fadeInUp: "fadeInUp .25s ease-out",
+                        slideInRight: "slideInRight .28s ease-out",
+                        toastIn: "toastIn .25s ease-out"
+                    },
+                    keyframes: {
+                        fadeInUp: {
+                            '0%': { opacity: '0', transform: 'translateY(16px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' }
+                        },
+                        slideInRight: {
+                            '0%': { opacity: '0', transform: 'translateX(24px)' },
+                            '100%': { opacity: '1', transform: 'translateX(0)' }
+                        },
+                        toastIn: {
+                            '0%': { opacity: '0', transform: 'translateY(8px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        html {
+            scroll-behavior: smooth;
+            -webkit-text-size-adjust: 100%;
+        }
+        body {
+            background: linear-gradient(180deg, #fff8f2 0%, #f8f3ee 100%);
+        }
+        .glass {
+            background: rgba(255,255,255,0.88);
+            backdrop-filter: blur(10px);
+        }
+        input, button, select, textarea {
+            font-size: 16px;
+        }
+        .safe-bottom {
+            padding-bottom: calc(1rem + env(safe-area-inset-bottom));
+        }
+        .panel-scroll {
+            scrollbar-width: thin;
+        }
+        .panel-scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+        .panel-scroll::-webkit-scrollbar-thumb {
+            background: rgba(93, 58, 36, 0.25);
+            border-radius: 999px;
+        }
+    </style>
+</head>
+<body class="min-h-screen text-gray-800">
+    <div class="min-h-screen pb-44 lg:pb-28">
+        <div class="mx-auto w-full max-w-7xl px-3 sm:px-5 lg:px-8">
+            <header class="sticky top-0 z-30 bg-white/90 backdrop-blur border-b border-orange-100 px-4 sm:px-6 py-4 flex items-center justify-between rounded-b-3xl shadow-sm">
+                <div>
+                    <h1 class="text-2xl sm:text-3xl font-extrabold tracking-[0.25em] text-cacao">CACAO PAY</h1>
+                    <p class="text-xs sm:text-sm text-gray-500">Paiement intelligent pour producteurs</p>
+                </div>
+                <div class="flex items-center gap-3 text-xl">
+                    <button id="notificationsBtn" class="w-11 h-11 rounded-full bg-orange-50 hover:bg-orange-100 transition flex items-center justify-center shadow-sm" aria-label="Notifications">🔔</button>
+                    <button id="menuBtn" class="w-11 h-11 rounded-full bg-cacao text-white hover:bg-[#4a2f1d] transition flex items-center justify-center shadow-sm" aria-label="Menu">☰</button>
+                </div>
+            </header>
+
+            <main class="pt-4 lg:pt-6">
+                <div class="grid gap-5 lg:grid-cols-[1.15fr_0.85fr] xl:grid-cols-[1.2fr_0.8fr]">
+                    <div class="space-y-5">
+                        <section id="homeSection" class="glass rounded-3xl p-4 sm:p-5 shadow-luxury flex items-center justify-between gap-4">
+                            <div class="flex items-center gap-3 sm:gap-4 min-w-0">
+                                <div class="w-14 h-14 sm:w-16 sm:h-16 shrink-0 rounded-full bg-gradient-to-br from-orangePay to-orange-300 flex items-center justify-center text-white text-2xl sm:text-3xl shadow-md">
+                                    👨🏿‍🌾
+                                </div>
+                                <div class="min-w-0">
+                                    <h2 class="font-bold text-lg sm:text-xl text-cacao truncate">{{ user.name }}</h2>
+                                    <p class="text-sm text-gray-500">{{ user.role }}</p>
+                                </div>
+                            </div>
+                            <div class="text-right shrink-0">
+                                <span class="inline-block px-3 py-1 rounded-full bg-orange-100 text-orangePay text-xs font-semibold">
+                                    Vérifié
+                                </span>
+                            </div>
+                        </section>
+
+                        <section class="bg-cacao text-white rounded-[2rem] p-5 sm:p-6 shadow-luxury relative overflow-hidden">
+                            <div class="absolute -right-8 -top-8 w-28 h-28 bg-orangePay/20 rounded-full"></div>
+                            <div class="absolute -left-10 -bottom-10 w-36 h-36 bg-white/10 rounded-full"></div>
+                            <div class="relative">
+                                <p class="text-sm uppercase tracking-wide text-orange-200">Portefeuille</p>
+                                <div class="mt-4 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+                                    <div>
+                                        <h3 class="text-lg font-medium">Solde Orange Money</h3>
+                                        <div class="mt-3 text-3xl sm:text-4xl font-extrabold leading-tight" id="balanceDisplay">
+                                            {{ "{:,.0f}".format(balance).replace(",", " ") }} FCFA
+                                        </div>
+                                    </div>
+                                    <div class="grid grid-cols-2 gap-3 w-full sm:w-auto sm:min-w-[230px]">
+                                        <button id="openTransactionModal"
+                                                class="bg-orangePay hover:bg-orange-600 transition text-white px-4 py-3 rounded-2xl font-semibold col-span-2 sm:col-span-1">
+                                            Effectuer un paiement
+                                        </button>
+                                        <button id="openSavingsPanel"
+                                                class="bg-white/10 hover:bg-white/20 transition text-white px-4 py-3 rounded-2xl font-semibold col-span-2 sm:col-span-1 border border-white/15">
+                                            Crédit & Épargne
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        <section>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+                                <button id="openTransactionCard" class="bg-white rounded-2xl p-4 shadow-luxury text-left hover:-translate-y-1 transition min-h-[150px]">
+                                    <div class="text-3xl">💳</div>
+                                    <h4 class="mt-3 font-bold text-cacao">Paiements & Transactions</h4>
+                                    <p class="text-sm text-gray-500 mt-1">Envoyer et suivre vos paiements</p>
+                                </button>
+
+                                <button id="deliveriesBtn" class="bg-white rounded-2xl p-4 shadow-luxury text-left hover:-translate-y-1 transition min-h-[150px]">
+                                    <div class="text-3xl">📦</div>
+                                    <h4 class="mt-3 font-bold text-cacao">Mes Livraisons</h4>
+                                    <p class="text-sm text-gray-500 mt-1">Visualiser les livraisons récentes</p>
+                                </button>
+
+                                <button id="traceabilityBtn" class="bg-white rounded-2xl p-4 shadow-luxury text-left hover:-translate-y-1 transition min-h-[150px]">
+                                    <div class="text-3xl">🍃</div>
+                                    <h4 class="mt-3 font-bold text-cacao">Marchandises & Traçabilité</h4>
+                                    <p class="text-sm text-gray-500 mt-1">Suivre vos récoltes et votre stock</p>
+                                </button>
+
+                                <button id="creditBtn" class="bg-white rounded-2xl p-4 shadow-luxury text-left hover:-translate-y-1 transition min-h-[150px]">
+                                    <div class="text-3xl">⚡</div>
+                                    <h4 class="mt-3 font-bold text-cacao">Crédit & Épargne</h4>
+                                    <p class="text-sm text-gray-500 mt-1">Financement et mise en réserve</p>
+                                </button>
+
+                                <button id="refreshMarketBtn" class="bg-white rounded-2xl p-4 shadow-luxury text-left hover:-translate-y-1 transition min-h-[150px]">
+                                    <div class="text-3xl">☀️</div>
+                                    <h4 class="mt-3 font-bold text-cacao">Infos Marché & Météo</h4>
+                                    <p class="text-sm text-gray-500 mt-1">Prix et conditions météo</p>
+                                </button>
+
+                                <button id="focusAiBtn" class="bg-white rounded-2xl p-4 shadow-luxury text-left hover:-translate-y-1 transition min-h-[150px]">
+                                    <div class="text-3xl">🎙️</div>
+                                    <h4 class="mt-3 font-bold text-cacao">Assistance Vocale IA</h4>
+                                    <p class="text-sm text-gray-500 mt-1">Conseils et réponses rapides</p>
+                                </button>
+                            </div>
+                        </section>
+
+                        <section id="marketSection" class="bg-white rounded-3xl p-5 shadow-luxury">
+                            <div class="flex items-center justify-between gap-4">
+                                <h3 class="text-lg font-bold text-cacao">Marché & Météo</h3>
+                                <button id="refreshMarketBtnTop" class="text-sm text-orangePay font-semibold">Actualiser</button>
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
+                                <div class="bg-orange-50 rounded-2xl p-4">
+                                    <p class="text-sm text-gray-500">Prix du cacao</p>
+                                    <div class="mt-2 text-xl sm:text-2xl font-extrabold text-cacao" id="cocoaPrice">
+                                        {{ market_weather.cocoa_price }} FCFA/kg
+                                    </div>
+                                </div>
+                                <div class="bg-orange-50 rounded-2xl p-4">
+                                    <p class="text-sm text-gray-500">Météo</p>
+                                    <div class="mt-2 text-xl sm:text-2xl font-extrabold text-cacao" id="weatherStatus">
+                                        {{ market_weather.weather }}
+                                    </div>
+                                </div>
+                            </div>
+                            <p class="text-xs text-gray-400 mt-3">
+                                Mise à jour : <span id="marketUpdatedAt">{{ market_weather.updated_at }}</span>
+                            </p>
+                        </section>
+
+                        <section id="harvestSection" class="bg-white rounded-3xl p-5 shadow-luxury">
+                            <div class="flex items-start justify-between gap-4 flex-wrap">
+                                <div>
+                                    <h3 class="text-lg font-bold text-cacao">Enregistrer une récolte</h3>
+                                    <p class="text-sm text-gray-500 mt-1">Ajoutez vos quantités récoltées pour suivre votre stock.</p>
+                                </div>
+                                <div class="bg-orange-50 rounded-2xl px-4 py-3 min-w-[150px]">
+                                    <p class="text-sm text-gray-500">Total enregistré</p>
+                                    <p class="text-2xl font-extrabold text-cacao">
+                                        <span id="totalHarvest">{{ total_harvest }}</span> kg
+                                    </p>
+                                </div>
+                            </div>
+
+                            <form id="harvestForm" class="mt-4 space-y-3">
+                                <div>
+                                    <label class="block text-sm text-gray-600 mb-1">Poids récolté (kg)</label>
+                                    <input
+                                        id="harvestWeight"
+                                        type="number"
+                                        step="0.1"
+                                        min="0"
+                                        placeholder="Ex: 125.5"
+                                        class="w-full rounded-2xl border border-orange-200 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orangePay"
+                                        required
+                                    >
+                                </div>
+                                <button
+                                    type="submit"
+                                    class="w-full sm:w-auto bg-cacao text-white py-3 px-6 rounded-2xl font-semibold hover:bg-[#4a2f1d] transition">
+                                    Enregistrer la récolte
+                                </button>
+                            </form>
+
+                            <div class="mt-5">
+                                <h4 class="font-semibold text-cacao mb-2">Dernières récoltes</h4>
+                                <div id="harvestList" class="space-y-2">
+                                    {% if harvests %}
+                                        {% for harvest in harvests %}
+                                        <div class="flex items-center justify-between gap-3 bg-gray-50 rounded-xl px-4 py-3">
+                                            <span class="text-sm text-gray-700">{{ harvest.weight }} kg</span>
+                                            <span class="text-xs text-gray-400 text-right">{{ harvest.date }}</span>
+                                        </div>
+                                        {% endfor %}
+                                    {% else %}
+                                        <div class="text-sm text-gray-400 bg-gray-50 rounded-xl px-4 py-3">
+                                            Aucune récolte enregistrée pour le moment.
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+
+                    <div class="space-y-5">
+                        <section id="assistantSection" class="bg-white rounded-3xl p-5 shadow-luxury lg:sticky lg:top-28">
+                            <div class="flex items-center justify-between gap-4">
+                                <h3 class="text-lg font-bold text-cacao">Assistant IA</h3>
+                                <span class="text-xs px-3 py-1 bg-orange-100 text-orangePay rounded-full font-semibold">En ligne</span>
+                            </div>
+
+                            <div id="chatBox" class="mt-4 space-y-3 max-h-[320px] overflow-y-auto panel-scroll pr-1">
+                                <div class="bg-orange-50 rounded-2xl p-3 text-sm">
+                                    Bonjour, je peux vous renseigner sur le prix du cacao, la météo ou les conseils agricoles.
+                                </div>
+                            </div>
+
+                            <form id="chatForm" class="mt-4 flex flex-col sm:flex-row gap-2">
+                                <input
+                                    id="chatInput"
+                                    type="text"
+                                    placeholder="Posez votre question..."
+                                    class="flex-1 rounded-2xl border border-orange-200 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orangePay"
+                                    required
+                                >
+                                <button
+                                    type="submit"
+                                    class="bg-orangePay text-white px-5 py-3 rounded-2xl font-semibold hover:bg-orange-600 transition whitespace-nowrap">
+                                    Envoyer
+                                </button>
+                            </form>
+                        </section>
+
+                        <section class="bg-white rounded-3xl p-5 shadow-luxury">
+                            <div class="flex items-center justify-between gap-4">
+                                <h3 class="text-lg font-bold text-cacao">Aperçu rapide</h3>
+                                <button id="openHistoryPanelTop" class="text-sm text-orangePay font-semibold">Voir tout</button>
+                            </div>
+                            <div class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+                                <div class="rounded-2xl bg-cream p-4">
+                                    <p class="text-sm text-gray-500">Dernière livraison</p>
+                                    <p id="quickDeliveryStatus" class="mt-2 text-lg font-bold text-cacao">{{ deliveries[0].status if deliveries else 'Aucune' }}</p>
+                                    <p id="quickDeliveryRef" class="text-sm text-gray-500 mt-1">{{ deliveries[0].reference if deliveries else 'Pas de référence' }}</p>
+                                </div>
+                                <div class="rounded-2xl bg-cream p-4">
+                                    <p class="text-sm text-gray-500">Épargne disponible</p>
+                                    <p id="quickSavings" class="mt-2 text-lg font-bold text-cacao">{{ "{:,.0f}".format(savings.available).replace(",", " ") }} FCFA</p>
+                                    <p class="text-sm text-gray-500 mt-1">Crédit max : {{ "{:,.0f}".format(savings.credit_limit).replace(",", " ") }} FCFA</p>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+                </div>
+            </main>
+        </div>
+
+        <div class="fixed bottom-[5.25rem] lg:bottom-4 left-1/2 -translate-x-1/2 w-full max-w-7xl px-3 sm:px-5 lg:px-8 z-20 pointer-events-none">
+            <div class="flex justify-center lg:justify-end">
+                <button id="voiceAssistantBar"
+                        class="pointer-events-auto w-full max-w-md bg-orangePay text-white rounded-2xl px-4 py-4 shadow-2xl flex items-center justify-center gap-3 font-bold hover:bg-orange-600 transition">
+                    <span class="text-xl">🎙️</span>
+                    <span>Note vocale / IA Assistant</span>
+                </button>
+            </div>
+        </div>
+
+        <nav class="fixed bottom-0 left-0 right-0 z-30 bg-white/95 backdrop-blur border-t border-orange-100 safe-bottom">
+            <div class="mx-auto w-full max-w-7xl px-3 sm:px-5 lg:px-8">
+                <div class="grid grid-cols-4 gap-2 text-center text-xs py-3">
+                    <button id="navHome" class="nav-btn text-orangePay font-bold rounded-2xl py-2">
+                        <div class="text-lg">🏠</div>
+                        <span>Accueil</span>
+                    </button>
+                    <button id="navHistory" class="nav-btn text-gray-500 rounded-2xl py-2">
+                        <div class="text-lg">🕘</div>
+                        <span>Historique</span>
+                    </button>
+                    <button id="navNotifications" class="nav-btn text-gray-500 rounded-2xl py-2">
+                        <div class="text-lg">🔔</div>
+                        <span>Notifications</span>
+                    </button>
+                    <button id="navProfile" class="nav-btn text-gray-500 rounded-2xl py-2">
+                        <div class="text-lg">👤</div>
+                        <span>Profil</span>
+                    </button>
+                </div>
+            </div>
+        </nav>
+
+        <div id="transactionModal" class="hidden fixed inset-0 bg-black/50 z-40 items-end sm:items-center justify-center px-3 sm:px-4">
+            <div class="bg-white rounded-t-3xl sm:rounded-3xl w-full max-w-md p-5 animate-fadeInUp shadow-panel">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-xl font-bold text-cacao">Nouveau paiement</h3>
+                    <button id="closeTransactionModal" class="text-gray-500 text-2xl leading-none">&times;</button>
+                </div>
+
+                <form id="transactionForm" class="space-y-4">
+                    <div>
+                        <label class="block text-sm text-gray-600 mb-1">Montant à payer (FCFA)</label>
+                        <input
+                            id="transactionAmount"
+                            type="number"
+                            min="1"
+                            placeholder="Ex: 5000"
+                            class="w-full rounded-2xl border border-orange-200 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orangePay"
+                            required
+                        >
+                    </div>
+
+                    <button
+                        type="submit"
+                        class="w-full bg-orangePay text-white py-3 rounded-2xl font-semibold hover:bg-orange-600 transition">
+                        Valider le paiement
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <div id="sidePanelOverlay" class="hidden fixed inset-0 bg-black/40 z-50"></div>
+        <aside id="sidePanel" class="fixed top-0 right-0 h-full w-full sm:max-w-md max-w-full bg-white shadow-panel z-[60] translate-x-full transition-transform duration-300 flex flex-col">
+            <div class="px-5 py-4 border-b border-orange-100 flex items-center justify-between">
+                <div>
+                    <h3 id="sidePanelTitle" class="text-xl font-bold text-cacao">Détails</h3>
+                    <p id="sidePanelSubtitle" class="text-sm text-gray-500">Informations rapides</p>
+                </div>
+                <button id="closeSidePanel" class="w-10 h-10 rounded-full bg-orange-50 text-cacao text-xl">&times;</button>
+            </div>
+            <div id="sidePanelContent" class="flex-1 overflow-y-auto panel-scroll p-5 space-y-4"></div>
+        </aside>
+
+        <div id="toast" class="hidden fixed top-24 right-3 sm:right-5 lg:right-8 z-[70] max-w-sm bg-cacao text-white px-4 py-3 rounded-2xl shadow-panel animate-toastIn"></div>
+    </div>
+
+    <script>
+        const initialState = {
+            user: {{ user|tojson }},
+            balance: {{ balance|tojson }},
+            market_weather: {{ market_weather|tojson }},
+            harvests: {{ harvests|tojson }},
+            transactions: {{ transactions|tojson }},
+            deliveries: {{ deliveries|tojson }},
+            notifications: {{ notifications|tojson }},
+            savings: {{ savings|tojson }},
+            total_harvest: {{ total_harvest|tojson }}
+        };
+
+        const appState = JSON.parse(JSON.stringify(initialState));
+
+        const balanceDisplay = document.getElementById("balanceDisplay");
+        const transactionModal = document.getElementById("transactionModal");
+        const openTransactionModal = document.getElementById("openTransactionModal");
+        const openTransactionCard = document.getElementById("openTransactionCard");
+        const closeTransactionModal = document.getElementById("closeTransactionModal");
+        const transactionForm = document.getElementById("transactionForm");
+        const transactionAmount = document.getElementById("transactionAmount");
+
+        const cocoaPrice = document.getElementById("cocoaPrice");
+        const weatherStatus = document.getElementById("weatherStatus");
+        const marketUpdatedAt = document.getElementById("marketUpdatedAt");
+        const refreshMarketBtn = document.getElementById("refreshMarketBtn");
+        const refreshMarketBtnTop = document.getElementById("refreshMarketBtnTop");
+
+        const chatForm = document.getElementById("chatForm");
+        const chatInput = document.getElementById("chatInput");
+        const chatBox = document.getElementById("chatBox");
+        const focusAiBtn = document.getElementById("focusAiBtn");
+        const voiceAssistantBar = document.getElementById("voiceAssistantBar");
+
+        const harvestForm = document.getElementById("harvestForm");
+        const harvestWeight = document.getElementById("harvestWeight");
+        const harvestList = document.getElementById("harvestList");
+        const totalHarvest = document.getElementById("totalHarvest");
+
+        const notificationsBtn = document.getElementById("notificationsBtn");
+        const menuBtn = document.getElementById("menuBtn");
+        const deliveriesBtn = document.getElementById("deliveriesBtn");
+        const traceabilityBtn = document.getElementById("traceabilityBtn");
+        const creditBtn = document.getElementById("creditBtn");
+        const openSavingsPanel = document.getElementById("openSavingsPanel");
+        const openHistoryPanelTop = document.getElementById("openHistoryPanelTop");
+
+        const navHome = document.getElementById("navHome");
+        const navHistory = document.getElementById("navHistory");
+        const navNotifications = document.getElementById("navNotifications");
+        const navProfile = document.getElementById("navProfile");
+
+        const sidePanel = document.getElementById("sidePanel");
+        const sidePanelOverlay = document.getElementById("sidePanelOverlay");
+        const closeSidePanel = document.getElementById("closeSidePanel");
+        const sidePanelTitle = document.getElementById("sidePanelTitle");
+        const sidePanelSubtitle = document.getElementById("sidePanelSubtitle");
+        const sidePanelContent = document.getElementById("sidePanelContent");
+        const toast = document.getElementById("toast");
+
+        const quickDeliveryStatus = document.getElementById("quickDeliveryStatus");
+        const quickDeliveryRef = document.getElementById("quickDeliveryRef");
+        const quickSavings = document.getElementById("quickSavings");
+
+        let toastTimer;
+
+        function formatFCFA(value) {
+            return new Intl.NumberFormat('fr-FR').format(value) + " FCFA";
+        }
+
+        function formatKg(value) {
+            return new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 1 }).format(value) + " kg";
+        }
+
+        function showToast(message) {
+            clearTimeout(toastTimer);
+            toast.textContent = message;
+            toast.classList.remove("hidden");
+            toastTimer = setTimeout(() => toast.classList.add("hidden"), 3200);
+        }
+
+        function openModal() {
+            transactionModal.classList.remove("hidden");
+            transactionModal.classList.add("flex");
+            setTimeout(() => transactionAmount.focus(), 60);
+        }
+
+        function closeModal() {
+            transactionModal.classList.add("hidden");
+            transactionModal.classList.remove("flex");
+            transactionAmount.value = "";
+        }
+
+        function openPanel(title, subtitle, content) {
+            sidePanelTitle.textContent = title;
+            sidePanelSubtitle.textContent = subtitle;
+            sidePanelContent.innerHTML = content;
+            sidePanelOverlay.classList.remove("hidden");
+            sidePanel.classList.remove("translate-x-full");
+            document.body.classList.add("overflow-hidden");
+        }
+
+        function closePanel() {
+            sidePanel.classList.add("translate-x-full");
+            sidePanelOverlay.classList.add("hidden");
+            document.body.classList.remove("overflow-hidden");
+        }
+
+        function activateNav(activeId) {
+            [navHome, navHistory, navNotifications, navProfile].forEach((button) => {
+                button.classList.remove("text-orangePay", "font-bold", "bg-orange-50");
+                button.classList.add("text-gray-500");
+            });
+            const target = document.getElementById(activeId);
+            target.classList.remove("text-gray-500");
+            target.classList.add("text-orangePay", "font-bold", "bg-orange-50");
+        }
+
+        function scrollToSection(id) {
+            const element = document.getElementById(id);
+            if (element) {
+                element.scrollIntoView({ behavior: "smooth", block: "start" });
+            }
+        }
+
+        function renderHarvests(harvests) {
+            if (!harvests || harvests.length === 0) {
+                harvestList.innerHTML = `
+                    <div class="text-sm text-gray-400 bg-gray-50 rounded-xl px-4 py-3">
+                        Aucune récolte enregistrée pour le moment.
+                    </div>
+                `;
+                return;
+            }
+
+            const reversed = [...harvests].reverse();
+            harvestList.innerHTML = reversed.map(item => `
+                <div class="flex items-center justify-between gap-3 bg-gray-50 rounded-xl px-4 py-3">
+                    <span class="text-sm text-gray-700">${formatKg(item.weight)}</span>
+                    <span class="text-xs text-gray-400 text-right">${item.date}</span>
+                </div>
+            `).join("");
+        }
+
+        function renderHistoryPanel() {
+            const transactions = [...(appState.transactions || [])].reverse();
+            const harvests = [...(appState.harvests || [])].reverse();
+
+            const transactionHtml = transactions.length
+                ? transactions.map(item => `
+                    <div class="rounded-2xl bg-cream p-4">
+                        <div class="flex items-center justify-between gap-3">
+                            <p class="font-semibold text-cacao">${item.type}</p>
+                            <span class="text-sm font-bold text-orangePay">${formatFCFA(item.amount)}</span>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-2">${item.date}</p>
+                    </div>
+                `).join("")
+                : `<div class="rounded-2xl bg-gray-50 p-4 text-sm text-gray-400">Aucune transaction récente.</div>`;
+
+            const harvestHtml = harvests.length
+                ? harvests.map(item => `
+                    <div class="rounded-2xl bg-gray-50 p-4 flex items-center justify-between gap-3">
+                        <p class="font-semibold text-cacao">${formatKg(item.weight)}</p>
+                        <span class="text-xs text-gray-500 text-right">${item.date}</span>
+                    </div>
+                `).join("")
+                : `<div class="rounded-2xl bg-gray-50 p-4 text-sm text-gray-400">Aucune récolte récente.</div>`;
+
+            openPanel(
+                "Historique",
+                "Transactions et récoltes récentes",
+                `
+                <section class="space-y-3">
+                    <div class="flex items-center justify-between gap-3">
+                        <h4 class="font-bold text-cacao">Transactions</h4>
+                        <button class="text-sm text-orangePay font-semibold" onclick="window.dispatchEvent(new CustomEvent('open-payment'))">Nouveau paiement</button>
+                    </div>
+                    ${transactionHtml}
+                </section>
+                <section class="space-y-3 pt-2 border-t border-orange-100">
+                    <div class="flex items-center justify-between gap-3">
+                        <h4 class="font-bold text-cacao">Récoltes</h4>
+                        <button class="text-sm text-orangePay font-semibold" onclick="window.dispatchEvent(new CustomEvent('scroll-harvest'))">Ajouter</button>
+                    </div>
+                    ${harvestHtml}
+                </section>
+                `
+            );
+        }
+
+        function renderNotificationsPanel() {
+            const notifications = [...(appState.notifications || [])].reverse();
+            const html = notifications.length
+                ? notifications.map(item => `
+                    <div class="rounded-2xl bg-orange-50 p-4">
+                        <div class="flex items-start justify-between gap-3">
+                            <div>
+                                <p class="font-semibold text-cacao">${item.title}</p>
+                                <p class="text-sm text-gray-600 mt-1">${item.message}</p>
+                            </div>
+                            <span class="text-xs text-gray-500 whitespace-nowrap">${item.date}</span>
+                        </div>
+                    </div>
+                `).join("")
+                : `<div class="rounded-2xl bg-gray-50 p-4 text-sm text-gray-400">Aucune notification disponible.</div>`;
+
+            openPanel("Notifications", "Alertes et informations utiles", html);
+        }
+
+        function renderDeliveriesPanel() {
+            const deliveries = [...(appState.deliveries || [])].reverse();
+            const html = deliveries.length
+                ? deliveries.map(item => `
+                    <div class="rounded-2xl bg-cream p-4">
+                        <div class="flex items-center justify-between gap-3">
+                            <p class="font-semibold text-cacao">${item.reference}</p>
+                            <span class="text-sm font-semibold text-orangePay">${item.status}</span>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-2">${item.date}</p>
+                    </div>
+                `).join("")
+                : `<div class="rounded-2xl bg-gray-50 p-4 text-sm text-gray-400">Aucune livraison récente.</div>`;
+
+            openPanel("Mes Livraisons", "Suivi des expéditions récentes", html);
+        }
+
+        function renderSavingsPanel() {
+            openPanel(
+                "Crédit & Épargne",
+                "Financement et mise en réserve",
+                `
+                <div class="rounded-3xl bg-cacao text-white p-5">
+                    <p class="text-sm text-orange-200">Épargne disponible</p>
+                    <p class="mt-2 text-3xl font-extrabold">${formatFCFA(appState.savings.available)}</p>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div class="rounded-2xl bg-orange-50 p-4">
+                        <p class="text-sm text-gray-500">Crédit maximum</p>
+                        <p class="mt-2 text-xl font-bold text-cacao">${formatFCFA(appState.savings.credit_limit)}</p>
+                    </div>
+                    <div class="rounded-2xl bg-orange-50 p-4">
+                        <p class="text-sm text-gray-500">Prochaine échéance</p>
+                        <p class="mt-2 text-xl font-bold text-cacao">${appState.savings.next_due}</p>
+                    </div>
+                </div>
+                <div class="rounded-2xl bg-gray-50 p-4 text-sm text-gray-600">
+                    Votre espace est prêt pour la consultation du financement et de l'épargne. Les actions principales restent accessibles sans changer votre contenu actuel.
+                </div>
+                `
+            );
+        }
+
+        function renderProfilePanel() {
+            openPanel(
+                "Profil",
+                "Informations du producteur",
+                `
+                <div class="rounded-3xl bg-cream p-5 flex items-center gap-4">
+                    <div class="w-14 h-14 rounded-full bg-gradient-to-br from-orangePay to-orange-300 flex items-center justify-center text-white text-2xl">👨🏿‍🌾</div>
+                    <div>
+                        <p class="text-xl font-bold text-cacao">${appState.user.name}</p>
+                        <p class="text-sm text-gray-500">${appState.user.role}</p>
+                    </div>
+                </div>
+                <div class="rounded-2xl bg-gray-50 p-4">
+                    <p class="text-sm text-gray-500">Statut</p>
+                    <p class="mt-2 font-semibold text-cacao">Compte vérifié</p>
+                </div>
+                <div class="rounded-2xl bg-gray-50 p-4">
+                    <p class="text-sm text-gray-500">Portefeuille actuel</p>
+                    <p class="mt-2 font-semibold text-cacao">${formatFCFA(appState.balance)}</p>
+                </div>
+                `
+            );
+        }
+
+        function renderMenuPanel() {
+            openPanel(
+                "Actions rapides",
+                "Accès direct aux sections importantes",
+                `
+                <div class="grid gap-3">
+                    <button class="rounded-2xl bg-cream p-4 text-left" onclick="window.dispatchEvent(new CustomEvent('open-history'))">
+                        <p class="font-semibold text-cacao">Voir l'historique</p>
+                        <p class="text-sm text-gray-500 mt-1">Transactions et récoltes récentes</p>
+                    </button>
+                    <button class="rounded-2xl bg-cream p-4 text-left" onclick="window.dispatchEvent(new CustomEvent('open-deliveries'))">
+                        <p class="font-semibold text-cacao">Mes livraisons</p>
+                        <p class="text-sm text-gray-500 mt-1">Suivi des expéditions</p>
+                    </button>
+                    <button class="rounded-2xl bg-cream p-4 text-left" onclick="window.dispatchEvent(new CustomEvent('open-savings'))">
+                        <p class="font-semibold text-cacao">Crédit & Épargne</p>
+                        <p class="text-sm text-gray-500 mt-1">Consultation rapide</p>
+                    </button>
+                    <button class="rounded-2xl bg-cream p-4 text-left" onclick="window.dispatchEvent(new CustomEvent('focus-assistant'))">
+                        <p class="font-semibold text-cacao">Assistant IA</p>
+                        <p class="text-sm text-gray-500 mt-1">Accéder à l'assistance</p>
+                    </button>
+                </div>
+                `
+            );
+        }
+
+        function syncQuickCards() {
+            const latestDelivery = (appState.deliveries || []).slice(-1)[0];
+            quickDeliveryStatus.textContent = latestDelivery ? latestDelivery.status : "Aucune";
+            quickDeliveryRef.textContent = latestDelivery ? latestDelivery.reference : "Pas de référence";
+            quickSavings.textContent = formatFCFA(appState.savings.available);
+        }
+
+        openTransactionModal.addEventListener("click", openModal);
+        openTransactionCard.addEventListener("click", openModal);
+        closeTransactionModal.addEventListener("click", closeModal);
+        notificationsBtn.addEventListener("click", () => { activateNav("navNotifications"); renderNotificationsPanel(); });
+        menuBtn.addEventListener("click", renderMenuPanel);
+        deliveriesBtn.addEventListener("click", () => { renderDeliveriesPanel(); showToast("Ouverture des livraisons."); });
+        traceabilityBtn.addEventListener("click", () => {
+            closePanel();
+            activateNav("navHome");
+            scrollToSection("harvestSection");
+            showToast("Section marchandises & traçabilité ouverte.");
+        });
+        creditBtn.addEventListener("click", renderSavingsPanel);
+        openSavingsPanel.addEventListener("click", renderSavingsPanel);
+        openHistoryPanelTop.addEventListener("click", () => { activateNav("navHistory"); renderHistoryPanel(); });
+
+        navHome.addEventListener("click", () => {
+            activateNav("navHome");
+            closePanel();
+            scrollToSection("homeSection");
+        });
+        navHistory.addEventListener("click", () => {
+            activateNav("navHistory");
+            renderHistoryPanel();
+        });
+        navNotifications.addEventListener("click", () => {
+            activateNav("navNotifications");
+            renderNotificationsPanel();
+        });
+        navProfile.addEventListener("click", () => {
+            activateNav("navProfile");
+            renderProfilePanel();
+        });
+
+        closeSidePanel.addEventListener("click", closePanel);
+        sidePanelOverlay.addEventListener("click", closePanel);
+
+        window.addEventListener("open-history", () => {
+            activateNav("navHistory");
+            renderHistoryPanel();
+        });
+        window.addEventListener("open-deliveries", renderDeliveriesPanel);
+        window.addEventListener("open-savings", renderSavingsPanel);
+        window.addEventListener("focus-assistant", () => {
+            closePanel();
+            activateNav("navHome");
+            scrollToSection("assistantSection");
+            setTimeout(() => chatInput.focus(), 200);
+        });
+        window.addEventListener("open-payment", () => {
+            closePanel();
+            openModal();
+        });
+        window.addEventListener("scroll-harvest", () => {
+            closePanel();
+            scrollToSection("harvestSection");
+            setTimeout(() => harvestWeight.focus(), 200);
+        });
+
+        transactionModal.addEventListener("click", (e) => {
+            if (e.target === transactionModal) {
+                closeModal();
+            }
+        });
+
+        transactionForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const amount = transactionAmount.value.trim();
+
+            try {
+                const response = await fetch("/api/transaction", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({ amount })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    appState.balance = data.new_balance;
+                    appState.transactions = data.transactions || appState.transactions;
+                    appState.notifications = data.notifications || appState.notifications;
+                    balanceDisplay.textContent = formatFCFA(data.new_balance);
+                    syncQuickCards();
+                    showToast(data.message);
+                    closeModal();
+                } else {
+                    showToast(data.message || "Erreur lors de la transaction.");
+                }
+            } catch (error) {
+                showToast("Impossible d'effectuer la transaction.");
+            }
+        });
+
+        async function loadMarketWeather(scrollIntoView = false) {
+            try {
+                const response = await fetch("/api/market-weather");
+                const result = await response.json();
+
+                if (result.success) {
+                    appState.market_weather = result.data;
+                    cocoaPrice.textContent = `${result.data.cocoa_price} FCFA/kg`;
+                    weatherStatus.textContent = result.data.weather;
+                    marketUpdatedAt.textContent = result.data.updated_at;
+                    if (scrollIntoView) {
+                        scrollToSection("marketSection");
+                    }
+                    showToast("Marché et météo actualisés.");
+                }
+            } catch (error) {
+                showToast("Erreur de mise à jour du marché.");
+            }
+        }
+
+        refreshMarketBtn.addEventListener("click", () => loadMarketWeather(true));
+        refreshMarketBtnTop.addEventListener("click", () => loadMarketWeather(false));
+
+        function appendMessage(text, sender = "bot") {
+            const wrapper = document.createElement("div");
+            wrapper.className = sender === "user"
+                ? "bg-cacao text-white rounded-2xl p-3 text-sm ml-6 sm:ml-10"
+                : "bg-orange-50 rounded-2xl p-3 text-sm mr-6 sm:mr-10";
+
+            wrapper.textContent = text;
+            chatBox.appendChild(wrapper);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        chatForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const message = chatInput.value.trim();
+
+            if (!message) return;
+
+            appendMessage(message, "user");
+            chatInput.value = "";
+
+            try {
+                const response = await fetch("/api/chat", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({ message })
+                });
+
+                const data = await response.json();
+                appendMessage(data.reply || "Je n'ai pas compris votre demande.", "bot");
+            } catch (error) {
+                appendMessage("Erreur de connexion avec l'assistant.", "bot");
+            }
+        });
+
+        harvestForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const weight = harvestWeight.value.trim();
+
+            try {
+                const response = await fetch("/api/harvest", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({ weight })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    appState.harvests = data.harvests || appState.harvests;
+                    appState.total_harvest = data.total_harvest;
+                    appState.notifications = data.notifications || appState.notifications;
+                    totalHarvest.textContent = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 1 }).format(data.total_harvest);
+                    renderHarvests(appState.harvests);
+                    harvestWeight.value = "";
+                    showToast(data.message);
+                } else {
+                    showToast(data.message || "Erreur lors de l'enregistrement.");
+                }
+            } catch (error) {
+                showToast("Impossible d'enregistrer la récolte.");
+            }
+        });
+
+        async function loadInitialState() {
+            try {
+                const response = await fetch("/api/state");
+                const result = await response.json();
+
+                if (result.success) {
+                    Object.assign(appState, result);
+                    balanceDisplay.textContent = formatFCFA(result.balance);
+                    cocoaPrice.textContent = `${result.market_weather.cocoa_price} FCFA/kg`;
+                    weatherStatus.textContent = result.market_weather.weather;
+                    marketUpdatedAt.textContent = result.market_weather.updated_at;
+                    totalHarvest.textContent = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 1 }).format(result.total_harvest);
+                    renderHarvests(result.harvests);
+                    syncQuickCards();
+                }
+            } catch (error) {
+                console.error("Erreur chargement état :", error);
+            }
+        }
+
+        focusAiBtn.addEventListener("click", () => {
+            activateNav("navHome");
+            scrollToSection("assistantSection");
+            setTimeout(() => chatInput.focus(), 200);
+            showToast("Assistant IA prêt à vous répondre.");
+        });
+
+        voiceAssistantBar.addEventListener("click", () => {
+            activateNav("navHome");
+            scrollToSection("assistantSection");
+            chatInput.focus();
+            appendMessage("Mode note vocale simulé activé. Posez votre question par écrit.", "bot");
+        });
+
+        document.addEventListener("keydown", (event) => {
+            if (event.key === "Escape") {
+                closeModal();
+                closePanel();
+            }
+        });
+
+        activateNav("navHome");
+        renderHarvests(appState.harvests);
+        syncQuickCards();
+        loadInitialState();
+        setInterval(() => loadMarketWeather(false), 15000);
+    </script>
+</body>
+</html>
